@@ -13,7 +13,6 @@ from sklearn.metrics import (
 import joblib
 from prometheus_client import Summary, Gauge, start_http_server
 from pathlib import Path
-import time
 
 # PROMETHEUS METRICS
 TRAINING_TIME = Summary('model_training_seconds', 'Time spent training the model')
@@ -22,6 +21,7 @@ MODEL_AUC = Gauge('model_auc', 'ROC AUC of the trained model')
 MODEL_PRECISION = Gauge('model_precision', 'Precision of the trained model')
 MODEL_RECALL = Gauge('model_recall', 'Recall of the trained model')
 MODEL_F1 = Gauge('model_f1', 'F1 Score of the trained model')
+
 
 @TRAINING_TIME.time()
 def train():
@@ -36,7 +36,9 @@ def train():
     target = df["default"]
 
     print("[INFO] Splitting data...")
-    X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        features, target, test_size=0.2, random_state=42
+        )
 
     print("[INFO] Training model...")
     model = LogisticRegression(max_iter=1000)
@@ -82,6 +84,7 @@ def train():
         f.write(str(cm))
 
     return model
+
 
 if __name__ == "__main__":
     print("[INFO] Starting Prometheus exporter on :8000...")

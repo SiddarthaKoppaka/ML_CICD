@@ -1,5 +1,3 @@
-# tests/test_utils.py
-
 from training_pipeline.utils import calculate_income_to_loan_ratio
 
 def test_income_to_loan_ratio_normal():
