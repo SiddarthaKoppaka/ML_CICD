@@ -1,0 +1,13 @@
+pandas
+numpy
+faker
+pyarrow
+fastparquet
+prometheus_client
+scikit-learn
+joblib
+
+# dev/test tools
+pytest
+flake8
+safety
