@@ -8,25 +8,30 @@ from sklearn.metrics import (
     confusion_matrix,
     precision_score,
     recall_score,
-    f1_score
+    f1_score,
 )
 import joblib
 from prometheus_client import Summary, Gauge, start_http_server
 from pathlib import Path
+from training_pipeline.s3_uploader import upload_file_to_s3
+from training_pipeline.config_loader import load_config
+
+config = load_config("training_pipeline/config.yaml")
+
 
 # PROMETHEUS METRICS
-TRAINING_TIME = Summary('model_training_seconds', 'Time spent training the model')
-MODEL_ACCURACY = Gauge('model_accuracy', 'Accuracy of the trained model')
-MODEL_AUC = Gauge('model_auc', 'ROC AUC of the trained model')
-MODEL_PRECISION = Gauge('model_precision', 'Precision of the trained model')
-MODEL_RECALL = Gauge('model_recall', 'Recall of the trained model')
-MODEL_F1 = Gauge('model_f1', 'F1 Score of the trained model')
+TRAINING_TIME = Summary("model_training_seconds", "Time spent training the model")
+MODEL_ACCURACY = Gauge("model_accuracy", "Accuracy of the trained model")
+MODEL_AUC = Gauge("model_auc", "ROC AUC of the trained model")
+MODEL_PRECISION = Gauge("model_precision", "Precision of the trained model")
+MODEL_RECALL = Gauge("model_recall", "Recall of the trained model")
+MODEL_F1 = Gauge("model_f1", "F1 Score of the trained model")
 
 
 @TRAINING_TIME.time()
 def train():
     print("[INFO] Reading features...")
-    df = pd.read_parquet("data/features/v1_features.parquet")
+    df = pd.read_parquet(config["data"]["feature_path"])
 
     # Define features and target
     if "user_id" in df.columns:
@@ -38,7 +43,7 @@ def train():
     print("[INFO] Splitting data...")
     X_train, X_test, y_train, y_test = train_test_split(
         features, target, test_size=0.2, random_state=42
-        )
+    )
 
     print("[INFO] Training model...")
     model = LogisticRegression(max_iter=1000)
@@ -74,14 +79,25 @@ def train():
 
     print("[INFO] Saving model and reports...")
     Path("models/").mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, "models/model_v1.pkl")
+    joblib.dump(model, config["output"]["model_path"])
 
     # Save classification report and confusion matrix to file
-    with open("models/evaluation_report.txt", "w") as f:
+    with open(config["output"]["metrics_path"], "w") as f:
         f.write("CLASSIFICATION REPORT\n")
         f.write(report)
         f.write("\nCONFUSION MATRIX\n")
         f.write(str(cm))
+    # Upload model & metrics
+    upload_file_to_s3(
+        config["output"]["model_path"],
+        "my-genai-bucket-siddu",
+        f"models/{Path(config['output']['model_path']).name}",
+    )
+    upload_file_to_s3(
+        config["output"]["metrics_path"],
+        "my-genai-bucket-siddu",
+        f"metrics/{Path(config['output']['metrics_path']).name}",
+    )
 
     return model
 
