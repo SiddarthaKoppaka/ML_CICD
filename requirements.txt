@@ -6,7 +6,7 @@ fastparquet
 prometheus_client
 scikit-learn
 joblib
-
+boto3
 # dev/test tools
 pytest
 flake8
