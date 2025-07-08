@@ -6,7 +6,6 @@ fastparquet
 prometheus_client
 scikit-learn
 joblib
-yaml
 
 # dev/test tools
 pytest

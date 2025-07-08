@@ -1,0 +1,47 @@
+name: Continuous Training
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.py'
+      - '**.yaml'
+      - 'requirements.txt'
+
+jobs:
+  train-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image for training
+      run: |
+        docker build -t ml-training-image .
+
+    - name: Run training inside container
+      run: |
+        docker run --rm \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ml-training-image
+
+    - name: Save model artifact to GitHub (optional)
+      uses: actions/upload-artifact@v4
+      with:
+        name: trained-model
+        path: models/model_v1.pkl
+
+    - name: Build Docker image for inference
+      run: |
+        docker build -f inference/Dockerfile -t inference-api .
+
+    - name: Push inference image to Docker Hub (optional)
+      run: |
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        docker tag inference-api yourdocker/inference-api:latest
+        docker push yourdocker/inference-api:latest
