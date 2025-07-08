@@ -30,17 +30,18 @@ jobs:
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           ml-training-image
 
-    - name: Save model artifact to GitHub (optional)
+    - name: Upload all artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: trained-model
-        path: models/model_v1.pkl
+        name: model-artifacts
+        path: |
+          models/
 
     - name: Build Docker image for inference
       run: |
         docker build -f inference/Dockerfile -t inference-api .
 
-    - name: Push inference image to Docker Hub (optional)
+    - name: Push inference image to Docker Hub
       run: |
         echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
         docker tag inference-api yourdocker/inference-api:latest

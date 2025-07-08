@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy code
 COPY . .
-
+ENV PYTHONPATH="${PYTHONPATH}:/app"
+ENV PYTHONUNBUFFERED=1
 # Entrypoint for training
-CMD ["python", "training_pipeline/train.py"]
+CMD ["python", "training_pipeline/train.py", "--config", "training_pipeline/config.yaml"]
