@@ -1,0 +1,37 @@
+name: Continuous Deployment to Hugging Face
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-to-hf:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Login to Hugging Face Hub
+      run: |
+        git config --global user.email "siddarthakoppaka@gmail.com.com"
+        git config --global user.name "Siddartha Koppaka"
+        echo -e "machine huggingface.co\n  login ${{ secrets.HF_TOKEN }}" > ~/.netrc
+
+    - name: Clone Hugging Face Space
+      run: |
+        git clone https://huggingface.co/spaces/${{ secrets.HF_SPACE_ID }} space
+        cd space && rm -rf ./*
+
+    - name: Copy inference files and model
+      run: |
+        cp inference/Dockerfile hf_space/Dockerfile
+        cp -r inference/* hf_space/
+        cp -r models/ hf_space/models/
+        touch hf_space/README.md
+
+    - name: Push updated app to Hugging Face
+      run: |
+        cd hf_space
+        git add .
+        git commit -m "Auto-deploy model from GitHub CD workflow"
+        git push
